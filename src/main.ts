@@ -1,23 +1,63 @@
-import { getInput, setOutput } from "@actions/core";
-import getBumpType from "./steps/getBumpType"
-import getPrevVersion from "./steps/getPrevVersion";
-import getNextVersion from "./steps/getNextVersion";
+import { SemVer } from "semver";
+import { getInput, group, notice } from "@actions/core";
+import setOutputVerbose from "./utils/setOutputVerbose";
+import steps from './steps'
+import type { BumpType } from "./utils/bumpType";
+import type { NextTags } from "./utils/nextTags";
 
 const run = async () => {
     const inputBumpType = getInput('bump-type');
     const inputTagPrefix = getInput('tag-prefix');
 
-    const bumpType = await getBumpType(inputBumpType);
-    const previousVersion = await getPrevVersion(inputTagPrefix);
-    const outputTags = getNextVersion(inputTagPrefix, bumpType, previousVersion);
+    const bumpType = await group(
+        'Determining bump type',
+        async (): Promise<BumpType> => {
+            return steps.getBumpType(inputBumpType);
+        },
+    )
 
-    if (previousVersion != null) {
-        setOutput('prev-tag', `${inputTagPrefix}${previousVersion.toString()}`)
-    }
-    
-    setOutput('next-patch-tag', outputTags.patchTag);
-    setOutput('next-minor-tag', outputTags.minorTag);
-    setOutput('next-major-tag', outputTags.majorTag);
+    const relevantTags = await group(
+        `Listing tags with prefix '${inputTagPrefix}'`,
+        async (): Promise<string[]> => {
+            return steps.listTagsWithPrefix(inputTagPrefix);
+        }
+    )
+
+    const existingVersions = await group(
+        'Parsing versions from tags',
+        async (): Promise<SemVer[]> => {
+            return steps.parseVersionsFromTags(inputTagPrefix, relevantTags)
+        }
+    )
+
+    const previousVersion = await group(
+        'Determining previous version',
+        async (): Promise<SemVer | null> => {
+            return steps.pickPrevVersion(existingVersions);
+        },
+    );
+
+    const outputTags = await group(
+        'Determining next version',
+        async (): Promise<NextTags> => {
+            return steps.pickNextVersion(inputTagPrefix, bumpType, previousVersion)
+        },
+    );
+
+    await group(
+        'Setting outputs',
+        async () => {
+            setOutputVerbose('next-patch-tag', outputTags.patchTag);
+            setOutputVerbose('next-minor-tag', outputTags.minorTag);
+            setOutputVerbose('next-major-tag', outputTags.majorTag);
+            
+            if (previousVersion == null) {
+                notice('No previous version found, skipping prev-tag output')
+            } else {
+                setOutputVerbose('prev-tag', `${inputTagPrefix}${previousVersion.toString()}`)
+            }
+        },
+    )
 }
 
 run()

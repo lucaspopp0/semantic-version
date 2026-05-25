@@ -1,7 +1,6 @@
-import { setFailed } from '@actions/core';
-import { getExecOutput } from '@actions/exec';
-
-export type BumpType = 'major' | 'minor' | 'patch';
+import { info, setFailed } from '@actions/core';
+import execFileAsync from '../utils/execFileAsync';
+import type { BumpType } from '../utils/bumpType';
 
 const getBumpType = async (
     inputBumpType: string,
@@ -19,13 +18,23 @@ const getBumpType = async (
     }
 
     const commitMessage = await getCommitMessage()
-    return bumpTypeFromMessage(commitMessage)
+
+    info(`Message for current commit: ${commitMessage}`)
+
+    const bumpType = bumpTypeFromMessage(commitMessage)
+    info(`Bump type: ${bumpType.toString()}`)
+
+    return bumpType;
 }
 
 const getCommitMessage = async (): Promise<string> => {
-    const output = await getExecOutput('git', ["show", "-s", "--format='%s"]);
+    const { stdout } = await execFileAsync(
+        'git',
+        ['show', '-s', "--format=%s"],
+        { encoding: 'utf8' },
+    );
 
-    return output.stdout;
+    return stdout;
 }
 
 const bumpTypeFromMessage = (message: string): BumpType => {

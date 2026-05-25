@@ -33,7 +33,7 @@ var require_tunnel = __commonJS({
     var tls = require("tls");
     var http = require("http");
     var https = require("https");
-    var events2 = require("events");
+    var events = require("events");
     var assert = require("assert");
     var util = require("util");
     exports2.httpOverHttp = httpOverHttp2;
@@ -85,7 +85,7 @@ var require_tunnel = __commonJS({
         self.removeSocket(socket);
       });
     }
-    util.inherits(TunnelingAgent, events2.EventEmitter);
+    util.inherits(TunnelingAgent, events.EventEmitter);
     TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
       var self = this;
       var options = mergeOptions({ request: req }, self.options, toOptions(host, port, localAddress));
@@ -1064,14 +1064,14 @@ var require_util = __commonJS({
         }
         const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
         let origin = url.origin != null ? url.origin : `${url.protocol || ""}//${url.hostname || ""}:${port}`;
-        let path4 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
+        let path = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
         if (origin[origin.length - 1] === "/") {
           origin = origin.slice(0, origin.length - 1);
         }
-        if (path4 && path4[0] !== "/") {
-          path4 = `/${path4}`;
+        if (path && path[0] !== "/") {
+          path = `/${path}`;
         }
-        return new URL(`${origin}${path4}`);
+        return new URL(`${origin}${path}`);
       }
       if (!isHttpOrHttpsPrefixed(url.origin || url.protocol)) {
         throw new InvalidArgumentError("Invalid URL protocol: the URL must start with `http:` or `https:`.");
@@ -1522,39 +1522,39 @@ var require_diagnostics = __commonJS({
       });
       diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
         const {
-          request: { method, path: path4, origin }
+          request: { method, path, origin }
         } = evt;
-        debuglog("sending request to %s %s/%s", method, origin, path4);
+        debuglog("sending request to %s %s/%s", method, origin, path);
       });
       diagnosticsChannel.channel("undici:request:headers").subscribe((evt) => {
         const {
-          request: { method, path: path4, origin },
+          request: { method, path, origin },
           response: { statusCode }
         } = evt;
         debuglog(
           "received response to %s %s/%s - HTTP %d",
           method,
           origin,
-          path4,
+          path,
           statusCode
         );
       });
       diagnosticsChannel.channel("undici:request:trailers").subscribe((evt) => {
         const {
-          request: { method, path: path4, origin }
+          request: { method, path, origin }
         } = evt;
-        debuglog("trailers received from %s %s/%s", method, origin, path4);
+        debuglog("trailers received from %s %s/%s", method, origin, path);
       });
       diagnosticsChannel.channel("undici:request:error").subscribe((evt) => {
         const {
-          request: { method, path: path4, origin },
+          request: { method, path, origin },
           error: error2
         } = evt;
         debuglog(
           "request to %s %s/%s errored - %s",
           method,
           origin,
-          path4,
+          path,
           error2.message
         );
       });
@@ -1603,9 +1603,9 @@ var require_diagnostics = __commonJS({
         });
         diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
           const {
-            request: { method, path: path4, origin }
+            request: { method, path, origin }
           } = evt;
-          debuglog("sending request to %s %s/%s", method, origin, path4);
+          debuglog("sending request to %s %s/%s", method, origin, path);
         });
       }
       diagnosticsChannel.channel("undici:websocket:open").subscribe((evt) => {
@@ -1668,7 +1668,7 @@ var require_request = __commonJS({
     var kHandler = Symbol("handler");
     var Request = class {
       constructor(origin, {
-        path: path4,
+        path,
         method,
         body,
         headers,
@@ -1683,11 +1683,11 @@ var require_request = __commonJS({
         expectContinue,
         servername
       }, handler) {
-        if (typeof path4 !== "string") {
+        if (typeof path !== "string") {
           throw new InvalidArgumentError("path must be a string");
-        } else if (path4[0] !== "/" && !(path4.startsWith("http://") || path4.startsWith("https://")) && method !== "CONNECT") {
+        } else if (path[0] !== "/" && !(path.startsWith("http://") || path.startsWith("https://")) && method !== "CONNECT") {
           throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
-        } else if (invalidPathRegex.test(path4)) {
+        } else if (invalidPathRegex.test(path)) {
           throw new InvalidArgumentError("invalid request path");
         }
         if (typeof method !== "string") {
@@ -1753,7 +1753,7 @@ var require_request = __commonJS({
         this.completed = false;
         this.aborted = false;
         this.upgrade = upgrade || null;
-        this.path = query ? buildURL(path4, query) : path4;
+        this.path = query ? buildURL(path, query) : path;
         this.origin = origin;
         this.idempotent = idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
         this.blocking = blocking == null ? false : blocking;
@@ -1976,8 +1976,8 @@ var require_request = __commonJS({
 var require_dispatcher = __commonJS({
   "node_modules/undici/lib/dispatcher/dispatcher.js"(exports2, module2) {
     "use strict";
-    var EventEmitter2 = require("node:events");
-    var Dispatcher = class extends EventEmitter2 {
+    var EventEmitter = require("node:events");
+    var Dispatcher = class extends EventEmitter {
       dispatch() {
         throw new Error("not implemented");
       }
@@ -2078,9 +2078,9 @@ var require_dispatcher_base = __commonJS({
       }
       close(callback) {
         if (callback === void 0) {
-          return new Promise((resolve2, reject) => {
+          return new Promise((resolve, reject) => {
             this.close((err, data) => {
-              return err ? reject(err) : resolve2(data);
+              return err ? reject(err) : resolve(data);
             });
           });
         }
@@ -2118,12 +2118,12 @@ var require_dispatcher_base = __commonJS({
           err = null;
         }
         if (callback === void 0) {
-          return new Promise((resolve2, reject) => {
+          return new Promise((resolve, reject) => {
             this.destroy(err, (err2, data) => {
               return err2 ? (
                 /* istanbul ignore next: should never error */
                 reject(err2)
-              ) : resolve2(data);
+              ) : resolve(data);
             });
           });
         }
@@ -4390,8 +4390,8 @@ var require_util2 = __commonJS({
     function createDeferredPromise() {
       let res;
       let rej;
-      const promise = new Promise((resolve2, reject) => {
-        res = resolve2;
+      const promise = new Promise((resolve, reject) => {
+        res = resolve;
         rej = reject;
       });
       return { promise, resolve: res, reject: rej };
@@ -6279,7 +6279,7 @@ var require_client_h1 = __commonJS({
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
     function writeH1(client, request) {
-      const { method, path: path4, host, upgrade, blocking, reset } = request;
+      const { method, path, host, upgrade, blocking, reset } = request;
       let { body, headers, contentLength } = request;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH" || method === "QUERY" || method === "PROPFIND" || method === "PROPPATCH";
       if (util.isFormDataLike(body)) {
@@ -6345,7 +6345,7 @@ var require_client_h1 = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header = `${method} ${path4} HTTP/1.1\r
+      let header = `${method} ${path} HTTP/1.1\r
 `;
       if (typeof host === "string") {
         header += `host: ${host}\r
@@ -6532,12 +6532,12 @@ upgrade: ${upgrade}\r
           cb();
         }
       }
-      const waitForDrain = () => new Promise((resolve2, reject) => {
+      const waitForDrain = () => new Promise((resolve, reject) => {
         assert(callback === null);
         if (socket[kError]) {
           reject(socket[kError]);
         } else {
-          callback = resolve2;
+          callback = resolve;
         }
       });
       socket.on("close", onDrain).on("drain", onDrain);
@@ -6871,7 +6871,7 @@ var require_client_h2 = __commonJS({
     }
     function writeH2(client, request) {
       const session = client[kHTTP2Session];
-      const { method, path: path4, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
+      const { method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
       let { body } = request;
       if (upgrade) {
         util.errorRequest(client, request, new Error("Upgrade not supported for H2"));
@@ -6938,7 +6938,7 @@ var require_client_h2 = __commonJS({
         });
         return true;
       }
-      headers[HTTP2_HEADER_PATH] = path4;
+      headers[HTTP2_HEADER_PATH] = path;
       headers[HTTP2_HEADER_SCHEME] = "https";
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
@@ -7174,12 +7174,12 @@ var require_client_h2 = __commonJS({
           cb();
         }
       }
-      const waitForDrain = () => new Promise((resolve2, reject) => {
+      const waitForDrain = () => new Promise((resolve, reject) => {
         assert(callback === null);
         if (socket[kError]) {
           reject(socket[kError]);
         } else {
-          callback = resolve2;
+          callback = resolve;
         }
       });
       h2stream.on("close", onDrain).on("drain", onDrain);
@@ -7291,9 +7291,9 @@ var require_redirect_handler = __commonJS({
           return this.handler.onHeaders(statusCode, headers, resume, statusText);
         }
         const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
-        const path4 = search ? `${pathname}${search}` : pathname;
+        const path = search ? `${pathname}${search}` : pathname;
         this.opts.headers = cleanRequestHeaders(this.opts.headers, statusCode === 303, this.opts.origin !== origin);
-        this.opts.path = path4;
+        this.opts.path = path;
         this.opts.origin = origin;
         this.opts.maxRedirections = 0;
         this.opts.query = null;
@@ -7657,16 +7657,16 @@ var require_client = __commonJS({
         return this[kNeedDrain] < 2;
       }
       async [kClose]() {
-        return new Promise((resolve2) => {
+        return new Promise((resolve) => {
           if (this[kSize]) {
-            this[kClosedResolve] = resolve2;
+            this[kClosedResolve] = resolve;
           } else {
-            resolve2(null);
+            resolve(null);
           }
         });
       }
       async [kDestroy](err) {
-        return new Promise((resolve2) => {
+        return new Promise((resolve) => {
           const requests = this[kQueue].splice(this[kPendingIdx]);
           for (let i = 0; i < requests.length; i++) {
             const request = requests[i];
@@ -7677,7 +7677,7 @@ var require_client = __commonJS({
               this[kClosedResolve]();
               this[kClosedResolve] = null;
             }
-            resolve2(null);
+            resolve(null);
           };
           if (this[kHTTPContext]) {
             this[kHTTPContext].destroy(err, callback);
@@ -7728,7 +7728,7 @@ var require_client = __commonJS({
         });
       }
       try {
-        const socket = await new Promise((resolve2, reject) => {
+        const socket = await new Promise((resolve, reject) => {
           client[kConnector]({
             host,
             hostname,
@@ -7740,7 +7740,7 @@ var require_client = __commonJS({
             if (err) {
               reject(err);
             } else {
-              resolve2(socket2);
+              resolve(socket2);
             }
           });
         });
@@ -8076,8 +8076,8 @@ var require_pool_base = __commonJS({
         if (this[kQueue].isEmpty()) {
           await Promise.all(this[kClients].map((c) => c.close()));
         } else {
-          await new Promise((resolve2) => {
-            this[kClosedResolve] = resolve2;
+          await new Promise((resolve) => {
+            this[kClosedResolve] = resolve;
           });
         }
       }
@@ -8528,10 +8528,10 @@ var require_proxy_agent = __commonJS({
         };
         const {
           origin,
-          path: path4 = "/",
+          path = "/",
           headers = {}
         } = opts;
-        opts.path = origin + path4;
+        opts.path = origin + path;
         if (!("host" in headers) && !("Host" in headers)) {
           const { host } = new URL2(origin);
           headers.host = host;
@@ -9292,7 +9292,7 @@ var require_readable = __commonJS({
         if (this._readableState.closeEmitted) {
           return null;
         }
-        return await new Promise((resolve2, reject) => {
+        return await new Promise((resolve, reject) => {
           if (this[kContentLength] > limit) {
             this.destroy(new AbortError());
           }
@@ -9305,7 +9305,7 @@ var require_readable = __commonJS({
             if (signal?.aborted) {
               reject(signal.reason ?? new AbortError());
             } else {
-              resolve2(null);
+              resolve(null);
             }
           }).on("error", noop).on("data", function(chunk) {
             limit -= chunk.length;
@@ -9324,7 +9324,7 @@ var require_readable = __commonJS({
     }
     async function consume(stream, type) {
       assert(!stream[kConsume]);
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve, reject) => {
         if (isUnusable(stream)) {
           const rState = stream._readableState;
           if (rState.destroyed && rState.closeEmitted === false) {
@@ -9341,7 +9341,7 @@ var require_readable = __commonJS({
             stream[kConsume] = {
               type,
               stream,
-              resolve: resolve2,
+              resolve,
               reject,
               length: 0,
               body: []
@@ -9411,18 +9411,18 @@ var require_readable = __commonJS({
       return buffer;
     }
     function consumeEnd(consume2) {
-      const { type, body, resolve: resolve2, stream, length } = consume2;
+      const { type, body, resolve, stream, length } = consume2;
       try {
         if (type === "text") {
-          resolve2(chunksDecode(body, length));
+          resolve(chunksDecode(body, length));
         } else if (type === "json") {
-          resolve2(JSON.parse(chunksDecode(body, length)));
+          resolve(JSON.parse(chunksDecode(body, length)));
         } else if (type === "arrayBuffer") {
-          resolve2(chunksConcat(body, length).buffer);
+          resolve(chunksConcat(body, length).buffer);
         } else if (type === "blob") {
-          resolve2(new Blob(body, { type: stream[kContentType] }));
+          resolve(new Blob(body, { type: stream[kContentType] }));
         } else if (type === "bytes") {
-          resolve2(chunksConcat(body, length));
+          resolve(chunksConcat(body, length));
         }
         consumeFinish(consume2);
       } catch (err) {
@@ -9679,9 +9679,9 @@ var require_api_request = __commonJS({
     };
     function request(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve, reject) => {
           request.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve(data);
           });
         });
       }
@@ -9904,9 +9904,9 @@ var require_api_stream = __commonJS({
     };
     function stream(opts, factory, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve, reject) => {
           stream.call(this, opts, factory, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve(data);
           });
         });
       }
@@ -10191,9 +10191,9 @@ var require_api_upgrade = __commonJS({
     };
     function upgrade(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve, reject) => {
           upgrade.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve(data);
           });
         });
       }
@@ -10285,9 +10285,9 @@ var require_api_connect = __commonJS({
     };
     function connect(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve2, reject) => {
+        return new Promise((resolve, reject) => {
           connect.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve2(data);
+            return err ? reject(err) : resolve(data);
           });
         });
       }
@@ -10452,20 +10452,20 @@ var require_mock_utils = __commonJS({
       }
       return true;
     }
-    function safeUrl(path4) {
-      if (typeof path4 !== "string") {
-        return path4;
+    function safeUrl(path) {
+      if (typeof path !== "string") {
+        return path;
       }
-      const pathSegments = path4.split("?");
+      const pathSegments = path.split("?");
       if (pathSegments.length !== 2) {
-        return path4;
+        return path;
       }
       const qp = new URLSearchParams(pathSegments.pop());
       qp.sort();
       return [...pathSegments, qp.toString()].join("?");
     }
-    function matchKey(mockDispatch2, { path: path4, method, body, headers }) {
-      const pathMatch = matchValue(mockDispatch2.path, path4);
+    function matchKey(mockDispatch2, { path, method, body, headers }) {
+      const pathMatch = matchValue(mockDispatch2.path, path);
       const methodMatch = matchValue(mockDispatch2.method, method);
       const bodyMatch = typeof mockDispatch2.body !== "undefined" ? matchValue(mockDispatch2.body, body) : true;
       const headersMatch = matchHeaders(mockDispatch2, headers);
@@ -10487,7 +10487,7 @@ var require_mock_utils = __commonJS({
     function getMockDispatch(mockDispatches, key) {
       const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
-      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path4 }) => matchValue(safeUrl(path4), resolvedPath));
+      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path }) => matchValue(safeUrl(path), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
@@ -10525,9 +10525,9 @@ var require_mock_utils = __commonJS({
       }
     }
     function buildKey(opts) {
-      const { path: path4, method, body, headers, query } = opts;
+      const { path, method, body, headers, query } = opts;
       return {
-        path: path4,
+        path,
         method,
         body,
         headers,
@@ -10833,7 +10833,7 @@ var require_mock_interceptor = __commonJS({
 var require_mock_client = __commonJS({
   "node_modules/undici/lib/mock/mock-client.js"(exports2, module2) {
     "use strict";
-    var { promisify } = require("node:util");
+    var { promisify: promisify2 } = require("node:util");
     var Client = require_client();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -10873,7 +10873,7 @@ var require_mock_client = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -10886,7 +10886,7 @@ var require_mock_client = __commonJS({
 var require_mock_pool = __commonJS({
   "node_modules/undici/lib/mock/mock-pool.js"(exports2, module2) {
     "use strict";
-    var { promisify } = require("node:util");
+    var { promisify: promisify2 } = require("node:util");
     var Pool = require_pool();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -10926,7 +10926,7 @@ var require_mock_pool = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -10990,10 +10990,10 @@ var require_pending_interceptors_formatter = __commonJS({
       }
       format(pendingInterceptors) {
         const withPrettyHeaders = pendingInterceptors.map(
-          ({ method, path: path4, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
+          ({ method, path, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
             Method: method,
             Origin: origin,
-            Path: path4,
+            Path: path,
             "Status code": statusCode,
             Persistent: persist ? PERSISTENT : NOT_PERSISTENT,
             Invocations: timesInvoked,
@@ -11756,10 +11756,10 @@ var require_headers = __commonJS({
         const lowercaseName = isLowerCase ? name : name.toLowerCase();
         const exists2 = this[kHeadersMap].get(lowercaseName);
         if (exists2) {
-          const delimiter2 = lowercaseName === "cookie" ? "; " : ", ";
+          const delimiter = lowercaseName === "cookie" ? "; " : ", ";
           this[kHeadersMap].set(lowercaseName, {
             name: exists2.name,
-            value: `${exists2.value}${delimiter2}${value}`
+            value: `${exists2.value}${delimiter}${value}`
           });
         } else {
           this[kHeadersMap].set(lowercaseName, { name, value });
@@ -14149,7 +14149,7 @@ var require_fetch = __commonJS({
       function dispatch({ body }) {
         const url = requestCurrentURL(request);
         const agent = fetchParams.controller.dispatcher;
-        return new Promise((resolve2, reject) => agent.dispatch(
+        return new Promise((resolve, reject) => agent.dispatch(
           {
             path: url.pathname + url.search,
             origin: url.origin,
@@ -14225,7 +14225,7 @@ var require_fetch = __commonJS({
                 }
               }
               const onError = this.onError.bind(this);
-              resolve2({
+              resolve({
                 status,
                 statusText,
                 headersList,
@@ -14271,7 +14271,7 @@ var require_fetch = __commonJS({
               for (let i = 0; i < rawHeaders.length; i += 2) {
                 headersList.append(bufferToLowerCasedHeaderName(rawHeaders[i]), rawHeaders[i + 1].toString("latin1"), true);
               }
-              resolve2({
+              resolve({
                 status,
                 statusText: STATUS_CODES[status],
                 headersList,
@@ -14676,7 +14676,7 @@ var require_util4 = __commonJS({
     var { getEncoding } = require_encoding();
     var { serializeAMimeType, parseMIMEType } = require_data_url();
     var { types } = require("node:util");
-    var { StringDecoder: StringDecoder2 } = require("string_decoder");
+    var { StringDecoder } = require("string_decoder");
     var { btoa } = require("node:buffer");
     var staticPropertyDescriptors = {
       enumerable: true,
@@ -14767,7 +14767,7 @@ var require_util4 = __commonJS({
             dataURL += serializeAMimeType(parsed);
           }
           dataURL += ";base64,";
-          const decoder = new StringDecoder2("latin1");
+          const decoder = new StringDecoder("latin1");
           for (const chunk of bytes) {
             dataURL += btoa(decoder.write(chunk));
           }
@@ -14796,7 +14796,7 @@ var require_util4 = __commonJS({
         }
         case "BinaryString": {
           let binaryString = "";
-          const decoder = new StringDecoder2("latin1");
+          const decoder = new StringDecoder("latin1");
           for (const chunk of bytes) {
             binaryString += decoder.write(chunk);
           }
@@ -15874,9 +15874,9 @@ var require_util6 = __commonJS({
         }
       }
     }
-    function validateCookiePath(path4) {
-      for (let i = 0; i < path4.length; ++i) {
-        const code = path4.charCodeAt(i);
+    function validateCookiePath(path) {
+      for (let i = 0; i < path.length; ++i) {
+        const code = path.charCodeAt(i);
         if (code < 32 || // exclude CTLs (0-31)
         code === 127 || // DEL
         code === 59) {
@@ -17947,8 +17947,8 @@ var require_util8 = __commonJS({
       return true;
     }
     function delay(ms) {
-      return new Promise((resolve2) => {
-        setTimeout(resolve2, ms).unref();
+      return new Promise((resolve) => {
+        setTimeout(resolve, ms).unref();
       });
     }
     module2.exports = {
@@ -18553,11 +18553,11 @@ var require_undici = __commonJS({
           if (typeof opts.path !== "string") {
             throw new InvalidArgumentError("invalid opts.path");
           }
-          let path4 = opts.path;
+          let path = opts.path;
           if (!opts.path.startsWith("/")) {
-            path4 = `/${path4}`;
+            path = `/${path}`;
           }
-          url = new URL(util.parseOrigin(url).origin + path4);
+          url = new URL(util.parseOrigin(url).origin + path);
         } else {
           if (!opts) {
             opts = typeof url === "object" ? url : {};
@@ -18811,7 +18811,7 @@ var require_semver = __commonJS({
     var { safeRe: re, t } = require_re();
     var parseOptions = require_parse_options();
     var { compareIdentifiers } = require_identifiers();
-    var SemVer3 = class _SemVer {
+    var SemVer4 = class _SemVer {
       constructor(version, options) {
         options = parseOptions(options);
         if (version instanceof _SemVer) {
@@ -19077,7 +19077,7 @@ var require_semver = __commonJS({
         return this;
       }
     };
-    module2.exports = SemVer3;
+    module2.exports = SemVer4;
   }
 });
 
@@ -19085,13 +19085,13 @@ var require_semver = __commonJS({
 var require_parse2 = __commonJS({
   "node_modules/semver/functions/parse.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var parse2 = (version, options, throwErrors = false) => {
-      if (version instanceof SemVer3) {
+      if (version instanceof SemVer4) {
         return version;
       }
       try {
-        return new SemVer3(version, options);
+        return new SemVer4(version, options);
       } catch (er) {
         if (!throwErrors) {
           return null;
@@ -19133,7 +19133,7 @@ var require_clean = __commonJS({
 var require_inc = __commonJS({
   "node_modules/semver/functions/inc.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var inc = (version, release, options, identifier, identifierBase) => {
       if (typeof options === "string") {
         identifierBase = identifier;
@@ -19141,8 +19141,8 @@ var require_inc = __commonJS({
         options = void 0;
       }
       try {
-        return new SemVer3(
-          version instanceof SemVer3 ? version.version : version,
+        return new SemVer4(
+          version instanceof SemVer4 ? version.version : version,
           options
         ).inc(release, identifier, identifierBase).version;
       } catch (er) {
@@ -19201,8 +19201,8 @@ var require_diff = __commonJS({
 var require_major = __commonJS({
   "node_modules/semver/functions/major.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
-    var major = (a, loose) => new SemVer3(a, loose).major;
+    var SemVer4 = require_semver();
+    var major = (a, loose) => new SemVer4(a, loose).major;
     module2.exports = major;
   }
 });
@@ -19211,8 +19211,8 @@ var require_major = __commonJS({
 var require_minor = __commonJS({
   "node_modules/semver/functions/minor.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
-    var minor = (a, loose) => new SemVer3(a, loose).minor;
+    var SemVer4 = require_semver();
+    var minor = (a, loose) => new SemVer4(a, loose).minor;
     module2.exports = minor;
   }
 });
@@ -19221,8 +19221,8 @@ var require_minor = __commonJS({
 var require_patch = __commonJS({
   "node_modules/semver/functions/patch.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
-    var patch = (a, loose) => new SemVer3(a, loose).patch;
+    var SemVer4 = require_semver();
+    var patch = (a, loose) => new SemVer4(a, loose).patch;
     module2.exports = patch;
   }
 });
@@ -19244,8 +19244,8 @@ var require_prerelease = __commonJS({
 var require_compare = __commonJS({
   "node_modules/semver/functions/compare.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
-    var compare = (a, b, loose) => new SemVer3(a, loose).compare(new SemVer3(b, loose));
+    var SemVer4 = require_semver();
+    var compare = (a, b, loose) => new SemVer4(a, loose).compare(new SemVer4(b, loose));
     module2.exports = compare;
   }
 });
@@ -19274,10 +19274,10 @@ var require_compare_loose = __commonJS({
 var require_compare_build = __commonJS({
   "node_modules/semver/functions/compare-build.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var compareBuild = (a, b, loose) => {
-      const versionA = new SemVer3(a, loose);
-      const versionB = new SemVer3(b, loose);
+      const versionA = new SemVer4(a, loose);
+      const versionB = new SemVer4(b, loose);
       return versionA.compare(versionB) || versionA.compareBuild(versionB);
     };
     module2.exports = compareBuild;
@@ -19418,11 +19418,11 @@ var require_cmp = __commonJS({
 var require_coerce = __commonJS({
   "node_modules/semver/functions/coerce.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var parse2 = require_parse2();
     var { safeRe: re, t } = require_re();
     var coerce = (version, options) => {
-      if (version instanceof SemVer3) {
+      if (version instanceof SemVer4) {
         return version;
       }
       if (typeof version === "number") {
@@ -19466,7 +19466,7 @@ var require_truncate = __commonJS({
     "use strict";
     var parse2 = require_parse2();
     var constants3 = require_constants6();
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var truncate = (version, truncation, options) => {
       if (!constants3.RELEASE_TYPES.includes(truncation)) {
         return null;
@@ -19475,7 +19475,7 @@ var require_truncate = __commonJS({
       return clonedVersion && doTruncation(clonedVersion, truncation);
     };
     var cloneInputVersion = (version, options) => {
-      const versionStringToParse = version instanceof SemVer3 ? version.version : version;
+      const versionStringToParse = version instanceof SemVer4 ? version.version : version;
       return parse2(versionStringToParse, options);
     };
     var doTruncation = (version, truncation) => {
@@ -19670,7 +19670,7 @@ var require_range = __commonJS({
         }
         if (typeof version === "string") {
           try {
-            version = new SemVer3(version, this.options);
+            version = new SemVer4(version, this.options);
           } catch (er) {
             return false;
           }
@@ -19689,7 +19689,7 @@ var require_range = __commonJS({
     var parseOptions = require_parse_options();
     var Comparator = require_comparator();
     var debug2 = require_debug();
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var {
       safeRe: re,
       src,
@@ -19962,7 +19962,7 @@ var require_comparator = __commonJS({
         if (!m[2]) {
           this.semver = ANY;
         } else {
-          this.semver = new SemVer3(m[2], this.options.loose);
+          this.semver = new SemVer4(m[2], this.options.loose);
         }
       }
       toString() {
@@ -19975,7 +19975,7 @@ var require_comparator = __commonJS({
         }
         if (typeof version === "string") {
           try {
-            version = new SemVer3(version, this.options);
+            version = new SemVer4(version, this.options);
           } catch (er) {
             return false;
           }
@@ -20027,7 +20027,7 @@ var require_comparator = __commonJS({
     var { safeRe: re, t } = require_re();
     var cmp = require_cmp();
     var debug2 = require_debug();
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var Range = require_range();
   }
 });
@@ -20063,7 +20063,7 @@ var require_to_comparators = __commonJS({
 var require_max_satisfying = __commonJS({
   "node_modules/semver/ranges/max-satisfying.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var Range = require_range();
     var maxSatisfying = (versions, range, options) => {
       let max = null;
@@ -20078,7 +20078,7 @@ var require_max_satisfying = __commonJS({
         if (rangeObj.test(v)) {
           if (!max || maxSV.compare(v) === -1) {
             max = v;
-            maxSV = new SemVer3(max, options);
+            maxSV = new SemVer4(max, options);
           }
         }
       });
@@ -20092,7 +20092,7 @@ var require_max_satisfying = __commonJS({
 var require_min_satisfying = __commonJS({
   "node_modules/semver/ranges/min-satisfying.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var Range = require_range();
     var minSatisfying = (versions, range, options) => {
       let min = null;
@@ -20107,7 +20107,7 @@ var require_min_satisfying = __commonJS({
         if (rangeObj.test(v)) {
           if (!min || minSV.compare(v) === 1) {
             min = v;
-            minSV = new SemVer3(min, options);
+            minSV = new SemVer4(min, options);
           }
         }
       });
@@ -20121,16 +20121,16 @@ var require_min_satisfying = __commonJS({
 var require_min_version = __commonJS({
   "node_modules/semver/ranges/min-version.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var Range = require_range();
     var gt2 = require_gt();
     var minVersion = (range, loose) => {
       range = new Range(range, loose);
-      let minver = new SemVer3("0.0.0");
+      let minver = new SemVer4("0.0.0");
       if (range.test(minver)) {
         return minver;
       }
-      minver = new SemVer3("0.0.0-0");
+      minver = new SemVer4("0.0.0-0");
       if (range.test(minver)) {
         return minver;
       }
@@ -20139,7 +20139,7 @@ var require_min_version = __commonJS({
         const comparators = range.set[i];
         let setMin = null;
         comparators.forEach((comparator) => {
-          const compver = new SemVer3(comparator.semver.version);
+          const compver = new SemVer4(comparator.semver.version);
           switch (comparator.operator) {
             case ">":
               if (compver.prerelease.length === 0) {
@@ -20196,7 +20196,7 @@ var require_valid2 = __commonJS({
 var require_outside = __commonJS({
   "node_modules/semver/ranges/outside.js"(exports2, module2) {
     "use strict";
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var Comparator = require_comparator();
     var { ANY } = Comparator;
     var Range = require_range();
@@ -20206,7 +20206,7 @@ var require_outside = __commonJS({
     var lte = require_lte();
     var gte = require_gte();
     var outside = (version, range, hilo, options) => {
-      version = new SemVer3(version, options);
+      version = new SemVer4(version, options);
       range = new Range(range, options);
       let gtfn, ltefn, ltfn, comp, ecomp;
       switch (hilo) {
@@ -20513,7 +20513,7 @@ var require_semver2 = __commonJS({
     "use strict";
     var internalRe = require_re();
     var constants3 = require_constants6();
-    var SemVer3 = require_semver();
+    var SemVer4 = require_semver();
     var identifiers = require_identifiers();
     var parse2 = require_parse2();
     var valid = require_valid();
@@ -20592,7 +20592,7 @@ var require_semver2 = __commonJS({
       intersects,
       simplifyRange,
       subset,
-      SemVer: SemVer3,
+      SemVer: SemVer4,
       re: internalRe.re,
       src: internalRe.src,
       tokens: internalRe.t,
@@ -20634,6 +20634,9 @@ function toCommandProperties(annotationProperties) {
 function issueCommand(command, properties, message) {
   const cmd = new Command(command, properties, message);
   process.stdout.write(cmd.toString() + os.EOL);
+}
+function issue(name, message = "") {
+  issueCommand(name, {}, message);
 }
 var CMD_STRING = "::";
 var Command = class {
@@ -20692,19 +20695,19 @@ function issueFileCommand(command, message) {
   });
 }
 function prepareKeyValueMessage(key, value) {
-  const delimiter2 = `ghadelimiter_${crypto.randomUUID()}`;
+  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
   const convertedValue = toCommandValue(value);
-  if (key.includes(delimiter2)) {
-    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter2}"`);
+  if (key.includes(delimiter)) {
+    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
   }
-  if (convertedValue.includes(delimiter2)) {
-    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter2}"`);
+  if (convertedValue.includes(delimiter)) {
+    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
   }
-  return `${key}<<${delimiter2}${os2.EOL}${convertedValue}${os2.EOL}${delimiter2}`;
+  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
 }
 
 // node_modules/@actions/core/lib/core.js
-var os5 = __toESM(require("os"), 1);
+var os4 = __toESM(require("os"), 1);
 
 // node_modules/@actions/http-client/lib/index.js
 var tunnel = __toESM(require_tunnel2(), 1);
@@ -20766,11 +20769,11 @@ var import_os = require("os");
 var import_fs = require("fs");
 var __awaiter = function(thisArg, _arguments, P, generator) {
   function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
+    return value instanceof P ? value : new P(function(resolve) {
+      resolve(value);
     });
   }
-  return new (P || (P = Promise))(function(resolve2, reject) {
+  return new (P || (P = Promise))(function(resolve, reject) {
     function fulfilled(value) {
       try {
         step(generator.next(value));
@@ -20786,7 +20789,7 @@ var __awaiter = function(thisArg, _arguments, P, generator) {
       }
     }
     function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -21048,761 +21051,47 @@ var _summary = new Summary();
 // node_modules/@actions/core/lib/platform.js
 var import_os2 = __toESM(require("os"), 1);
 
-// node_modules/@actions/exec/lib/exec.js
-var import_string_decoder = require("string_decoder");
-
-// node_modules/@actions/exec/lib/toolrunner.js
-var os3 = __toESM(require("os"), 1);
-var events = __toESM(require("events"), 1);
-var child = __toESM(require("child_process"), 1);
-var path3 = __toESM(require("path"), 1);
-
-// node_modules/@actions/io/lib/io.js
-var path2 = __toESM(require("path"), 1);
-
 // node_modules/@actions/io/lib/io-util.js
 var fs2 = __toESM(require("fs"), 1);
-var path = __toESM(require("path"), 1);
-var __awaiter2 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve2, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
 var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
 var IS_WINDOWS = process.platform === "win32";
 var READONLY = fs2.constants.O_RDONLY;
-function exists(fsPath) {
-  return __awaiter2(this, void 0, void 0, function* () {
-    try {
-      yield stat(fsPath);
-    } catch (err) {
-      if (err.code === "ENOENT") {
-        return false;
-      }
-      throw err;
-    }
-    return true;
-  });
-}
-function isRooted(p) {
-  p = normalizeSeparators(p);
-  if (!p) {
-    throw new Error('isRooted() parameter "p" cannot be empty');
-  }
-  if (IS_WINDOWS) {
-    return p.startsWith("\\") || /^[A-Z]:/i.test(p);
-  }
-  return p.startsWith("/");
-}
-function tryGetExecutablePath(filePath, extensions) {
-  return __awaiter2(this, void 0, void 0, function* () {
-    let stats = void 0;
-    try {
-      stats = yield stat(filePath);
-    } catch (err) {
-      if (err.code !== "ENOENT") {
-        console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
-      }
-    }
-    if (stats && stats.isFile()) {
-      if (IS_WINDOWS) {
-        const upperExt = path.extname(filePath).toUpperCase();
-        if (extensions.some((validExt) => validExt.toUpperCase() === upperExt)) {
-          return filePath;
-        }
-      } else {
-        if (isUnixExecutable(stats)) {
-          return filePath;
-        }
-      }
-    }
-    const originalFilePath = filePath;
-    for (const extension of extensions) {
-      filePath = originalFilePath + extension;
-      stats = void 0;
-      try {
-        stats = yield stat(filePath);
-      } catch (err) {
-        if (err.code !== "ENOENT") {
-          console.log(`Unexpected error attempting to determine if executable file exists '${filePath}': ${err}`);
-        }
-      }
-      if (stats && stats.isFile()) {
-        if (IS_WINDOWS) {
-          try {
-            const directory = path.dirname(filePath);
-            const upperName = path.basename(filePath).toUpperCase();
-            for (const actualName of yield readdir(directory)) {
-              if (upperName === actualName.toUpperCase()) {
-                filePath = path.join(directory, actualName);
-                break;
-              }
-            }
-          } catch (err) {
-            console.log(`Unexpected error attempting to determine the actual case of the file '${filePath}': ${err}`);
-          }
-          return filePath;
-        } else {
-          if (isUnixExecutable(stats)) {
-            return filePath;
-          }
-        }
-      }
-    }
-    return "";
-  });
-}
-function normalizeSeparators(p) {
-  p = p || "";
-  if (IS_WINDOWS) {
-    p = p.replace(/\//g, "\\");
-    return p.replace(/\\\\+/g, "\\");
-  }
-  return p.replace(/\/\/+/g, "/");
-}
-function isUnixExecutable(stats) {
-  return (stats.mode & 1) > 0 || (stats.mode & 8) > 0 && process.getgid !== void 0 && stats.gid === process.getgid() || (stats.mode & 64) > 0 && process.getuid !== void 0 && stats.uid === process.getuid();
-}
-
-// node_modules/@actions/io/lib/io.js
-var __awaiter3 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve2, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function which(tool, check) {
-  return __awaiter3(this, void 0, void 0, function* () {
-    if (!tool) {
-      throw new Error("parameter 'tool' is required");
-    }
-    if (check) {
-      const result = yield which(tool, false);
-      if (!result) {
-        if (IS_WINDOWS) {
-          throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also verify the file has a valid extension for an executable file.`);
-        } else {
-          throw new Error(`Unable to locate executable file: ${tool}. Please verify either the file path exists or the file can be found within a directory specified by the PATH environment variable. Also check the file mode to verify the file is executable.`);
-        }
-      }
-      return result;
-    }
-    const matches = yield findInPath(tool);
-    if (matches && matches.length > 0) {
-      return matches[0];
-    }
-    return "";
-  });
-}
-function findInPath(tool) {
-  return __awaiter3(this, void 0, void 0, function* () {
-    if (!tool) {
-      throw new Error("parameter 'tool' is required");
-    }
-    const extensions = [];
-    if (IS_WINDOWS && process.env["PATHEXT"]) {
-      for (const extension of process.env["PATHEXT"].split(path2.delimiter)) {
-        if (extension) {
-          extensions.push(extension);
-        }
-      }
-    }
-    if (isRooted(tool)) {
-      const filePath = yield tryGetExecutablePath(tool, extensions);
-      if (filePath) {
-        return [filePath];
-      }
-      return [];
-    }
-    if (tool.includes(path2.sep)) {
-      return [];
-    }
-    const directories = [];
-    if (process.env.PATH) {
-      for (const p of process.env.PATH.split(path2.delimiter)) {
-        if (p) {
-          directories.push(p);
-        }
-      }
-    }
-    const matches = [];
-    for (const directory of directories) {
-      const filePath = yield tryGetExecutablePath(path2.join(directory, tool), extensions);
-      if (filePath) {
-        matches.push(filePath);
-      }
-    }
-    return matches;
-  });
-}
 
 // node_modules/@actions/exec/lib/toolrunner.js
-var import_timers = require("timers");
-var __awaiter4 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve2, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
 var IS_WINDOWS2 = process.platform === "win32";
-var ToolRunner = class extends events.EventEmitter {
-  constructor(toolPath, args, options) {
-    super();
-    if (!toolPath) {
-      throw new Error("Parameter 'toolPath' cannot be null or empty.");
-    }
-    this.toolPath = toolPath;
-    this.args = args || [];
-    this.options = options || {};
-  }
-  _debug(message) {
-    if (this.options.listeners && this.options.listeners.debug) {
-      this.options.listeners.debug(message);
-    }
-  }
-  _getCommandString(options, noPrefix) {
-    const toolPath = this._getSpawnFileName();
-    const args = this._getSpawnArgs(options);
-    let cmd = noPrefix ? "" : "[command]";
-    if (IS_WINDOWS2) {
-      if (this._isCmdFile()) {
-        cmd += toolPath;
-        for (const a of args) {
-          cmd += ` ${a}`;
-        }
-      } else if (options.windowsVerbatimArguments) {
-        cmd += `"${toolPath}"`;
-        for (const a of args) {
-          cmd += ` ${a}`;
-        }
-      } else {
-        cmd += this._windowsQuoteCmdArg(toolPath);
-        for (const a of args) {
-          cmd += ` ${this._windowsQuoteCmdArg(a)}`;
-        }
-      }
-    } else {
-      cmd += toolPath;
-      for (const a of args) {
-        cmd += ` ${a}`;
-      }
-    }
-    return cmd;
-  }
-  _processLineBuffer(data, strBuffer, onLine) {
-    try {
-      let s = strBuffer + data.toString();
-      let n = s.indexOf(os3.EOL);
-      while (n > -1) {
-        const line = s.substring(0, n);
-        onLine(line);
-        s = s.substring(n + os3.EOL.length);
-        n = s.indexOf(os3.EOL);
-      }
-      return s;
-    } catch (err) {
-      this._debug(`error processing line. Failed with error ${err}`);
-      return "";
-    }
-  }
-  _getSpawnFileName() {
-    if (IS_WINDOWS2) {
-      if (this._isCmdFile()) {
-        return process.env["COMSPEC"] || "cmd.exe";
-      }
-    }
-    return this.toolPath;
-  }
-  _getSpawnArgs(options) {
-    if (IS_WINDOWS2) {
-      if (this._isCmdFile()) {
-        let argline = `/D /S /C "${this._windowsQuoteCmdArg(this.toolPath)}`;
-        for (const a of this.args) {
-          argline += " ";
-          argline += options.windowsVerbatimArguments ? a : this._windowsQuoteCmdArg(a);
-        }
-        argline += '"';
-        return [argline];
-      }
-    }
-    return this.args;
-  }
-  _endsWith(str, end) {
-    return str.endsWith(end);
-  }
-  _isCmdFile() {
-    const upperToolPath = this.toolPath.toUpperCase();
-    return this._endsWith(upperToolPath, ".CMD") || this._endsWith(upperToolPath, ".BAT");
-  }
-  _windowsQuoteCmdArg(arg) {
-    if (!this._isCmdFile()) {
-      return this._uvQuoteCmdArg(arg);
-    }
-    if (!arg) {
-      return '""';
-    }
-    const cmdSpecialChars = [
-      " ",
-      "	",
-      "&",
-      "(",
-      ")",
-      "[",
-      "]",
-      "{",
-      "}",
-      "^",
-      "=",
-      ";",
-      "!",
-      "'",
-      "+",
-      ",",
-      "`",
-      "~",
-      "|",
-      "<",
-      ">",
-      '"'
-    ];
-    let needsQuotes = false;
-    for (const char of arg) {
-      if (cmdSpecialChars.some((x) => x === char)) {
-        needsQuotes = true;
-        break;
-      }
-    }
-    if (!needsQuotes) {
-      return arg;
-    }
-    let reverse = '"';
-    let quoteHit = true;
-    for (let i = arg.length; i > 0; i--) {
-      reverse += arg[i - 1];
-      if (quoteHit && arg[i - 1] === "\\") {
-        reverse += "\\";
-      } else if (arg[i - 1] === '"') {
-        quoteHit = true;
-        reverse += '"';
-      } else {
-        quoteHit = false;
-      }
-    }
-    reverse += '"';
-    return reverse.split("").reverse().join("");
-  }
-  _uvQuoteCmdArg(arg) {
-    if (!arg) {
-      return '""';
-    }
-    if (!arg.includes(" ") && !arg.includes("	") && !arg.includes('"')) {
-      return arg;
-    }
-    if (!arg.includes('"') && !arg.includes("\\")) {
-      return `"${arg}"`;
-    }
-    let reverse = '"';
-    let quoteHit = true;
-    for (let i = arg.length; i > 0; i--) {
-      reverse += arg[i - 1];
-      if (quoteHit && arg[i - 1] === "\\") {
-        reverse += "\\";
-      } else if (arg[i - 1] === '"') {
-        quoteHit = true;
-        reverse += "\\";
-      } else {
-        quoteHit = false;
-      }
-    }
-    reverse += '"';
-    return reverse.split("").reverse().join("");
-  }
-  _cloneExecOptions(options) {
-    options = options || {};
-    const result = {
-      cwd: options.cwd || process.cwd(),
-      env: options.env || process.env,
-      silent: options.silent || false,
-      windowsVerbatimArguments: options.windowsVerbatimArguments || false,
-      failOnStdErr: options.failOnStdErr || false,
-      ignoreReturnCode: options.ignoreReturnCode || false,
-      delay: options.delay || 1e4
-    };
-    result.outStream = options.outStream || process.stdout;
-    result.errStream = options.errStream || process.stderr;
-    return result;
-  }
-  _getSpawnOptions(options, toolPath) {
-    options = options || {};
-    const result = {};
-    result.cwd = options.cwd;
-    result.env = options.env;
-    result["windowsVerbatimArguments"] = options.windowsVerbatimArguments || this._isCmdFile();
-    if (options.windowsVerbatimArguments) {
-      result.argv0 = `"${toolPath}"`;
-    }
-    return result;
-  }
-  /**
-   * Exec a tool.
-   * Output will be streamed to the live console.
-   * Returns promise with return code
-   *
-   * @param     tool     path to tool to exec
-   * @param     options  optional exec options.  See ExecOptions
-   * @returns   number
-   */
-  exec() {
-    return __awaiter4(this, void 0, void 0, function* () {
-      if (!isRooted(this.toolPath) && (this.toolPath.includes("/") || IS_WINDOWS2 && this.toolPath.includes("\\"))) {
-        this.toolPath = path3.resolve(process.cwd(), this.options.cwd || process.cwd(), this.toolPath);
-      }
-      this.toolPath = yield which(this.toolPath, true);
-      return new Promise((resolve2, reject) => __awaiter4(this, void 0, void 0, function* () {
-        this._debug(`exec tool: ${this.toolPath}`);
-        this._debug("arguments:");
-        for (const arg of this.args) {
-          this._debug(`   ${arg}`);
-        }
-        const optionsNonNull = this._cloneExecOptions(this.options);
-        if (!optionsNonNull.silent && optionsNonNull.outStream) {
-          optionsNonNull.outStream.write(this._getCommandString(optionsNonNull) + os3.EOL);
-        }
-        const state = new ExecState(optionsNonNull, this.toolPath);
-        state.on("debug", (message) => {
-          this._debug(message);
-        });
-        if (this.options.cwd && !(yield exists(this.options.cwd))) {
-          return reject(new Error(`The cwd: ${this.options.cwd} does not exist!`));
-        }
-        const fileName = this._getSpawnFileName();
-        const cp = child.spawn(fileName, this._getSpawnArgs(optionsNonNull), this._getSpawnOptions(this.options, fileName));
-        let stdbuffer = "";
-        if (cp.stdout) {
-          cp.stdout.on("data", (data) => {
-            if (this.options.listeners && this.options.listeners.stdout) {
-              this.options.listeners.stdout(data);
-            }
-            if (!optionsNonNull.silent && optionsNonNull.outStream) {
-              optionsNonNull.outStream.write(data);
-            }
-            stdbuffer = this._processLineBuffer(data, stdbuffer, (line) => {
-              if (this.options.listeners && this.options.listeners.stdline) {
-                this.options.listeners.stdline(line);
-              }
-            });
-          });
-        }
-        let errbuffer = "";
-        if (cp.stderr) {
-          cp.stderr.on("data", (data) => {
-            state.processStderr = true;
-            if (this.options.listeners && this.options.listeners.stderr) {
-              this.options.listeners.stderr(data);
-            }
-            if (!optionsNonNull.silent && optionsNonNull.errStream && optionsNonNull.outStream) {
-              const s = optionsNonNull.failOnStdErr ? optionsNonNull.errStream : optionsNonNull.outStream;
-              s.write(data);
-            }
-            errbuffer = this._processLineBuffer(data, errbuffer, (line) => {
-              if (this.options.listeners && this.options.listeners.errline) {
-                this.options.listeners.errline(line);
-              }
-            });
-          });
-        }
-        cp.on("error", (err) => {
-          state.processError = err.message;
-          state.processExited = true;
-          state.processClosed = true;
-          state.CheckComplete();
-        });
-        cp.on("exit", (code) => {
-          state.processExitCode = code;
-          state.processExited = true;
-          this._debug(`Exit code ${code} received from tool '${this.toolPath}'`);
-          state.CheckComplete();
-        });
-        cp.on("close", (code) => {
-          state.processExitCode = code;
-          state.processExited = true;
-          state.processClosed = true;
-          this._debug(`STDIO streams have closed for tool '${this.toolPath}'`);
-          state.CheckComplete();
-        });
-        state.on("done", (error2, exitCode) => {
-          if (stdbuffer.length > 0) {
-            this.emit("stdline", stdbuffer);
-          }
-          if (errbuffer.length > 0) {
-            this.emit("errline", errbuffer);
-          }
-          cp.removeAllListeners();
-          if (error2) {
-            reject(error2);
-          } else {
-            resolve2(exitCode);
-          }
-        });
-        if (this.options.input) {
-          if (!cp.stdin) {
-            throw new Error("child process missing stdin");
-          }
-          cp.stdin.end(this.options.input);
-        }
-      }));
-    });
-  }
-};
-function argStringToArray(argString) {
-  const args = [];
-  let inQuotes = false;
-  let escaped = false;
-  let arg = "";
-  function append(c) {
-    if (escaped && c !== '"') {
-      arg += "\\";
-    }
-    arg += c;
-    escaped = false;
-  }
-  for (let i = 0; i < argString.length; i++) {
-    const c = argString.charAt(i);
-    if (c === '"') {
-      if (!escaped) {
-        inQuotes = !inQuotes;
-      } else {
-        append(c);
-      }
-      continue;
-    }
-    if (c === "\\" && escaped) {
-      append(c);
-      continue;
-    }
-    if (c === "\\" && inQuotes) {
-      escaped = true;
-      continue;
-    }
-    if (c === " " && !inQuotes) {
-      if (arg.length > 0) {
-        args.push(arg);
-        arg = "";
-      }
-      continue;
-    }
-    append(c);
-  }
-  if (arg.length > 0) {
-    args.push(arg.trim());
-  }
-  return args;
-}
-var ExecState = class _ExecState extends events.EventEmitter {
-  constructor(options, toolPath) {
-    super();
-    this.processClosed = false;
-    this.processError = "";
-    this.processExitCode = 0;
-    this.processExited = false;
-    this.processStderr = false;
-    this.delay = 1e4;
-    this.done = false;
-    this.timeout = null;
-    if (!toolPath) {
-      throw new Error("toolPath must not be empty");
-    }
-    this.options = options;
-    this.toolPath = toolPath;
-    if (options.delay) {
-      this.delay = options.delay;
-    }
-  }
-  CheckComplete() {
-    if (this.done) {
-      return;
-    }
-    if (this.processClosed) {
-      this._setResult();
-    } else if (this.processExited) {
-      this.timeout = (0, import_timers.setTimeout)(_ExecState.HandleTimeout, this.delay, this);
-    }
-  }
-  _debug(message) {
-    this.emit("debug", message);
-  }
-  _setResult() {
-    let error2;
-    if (this.processExited) {
-      if (this.processError) {
-        error2 = new Error(`There was an error when attempting to execute the process '${this.toolPath}'. This may indicate the process failed to start. Error: ${this.processError}`);
-      } else if (this.processExitCode !== 0 && !this.options.ignoreReturnCode) {
-        error2 = new Error(`The process '${this.toolPath}' failed with exit code ${this.processExitCode}`);
-      } else if (this.processStderr && this.options.failOnStdErr) {
-        error2 = new Error(`The process '${this.toolPath}' failed because one or more lines were written to the STDERR stream`);
-      }
-    }
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
-    this.done = true;
-    this.emit("done", error2, this.processExitCode);
-  }
-  static HandleTimeout(state) {
-    if (state.done) {
-      return;
-    }
-    if (!state.processClosed && state.processExited) {
-      const message = `The STDIO streams did not close within ${state.delay / 1e3} seconds of the exit event from process '${state.toolPath}'. This may indicate a child process inherited the STDIO streams and has not yet exited.`;
-      state._debug(message);
-    }
-    state._setResult();
-  }
-};
-
-// node_modules/@actions/exec/lib/exec.js
-var __awaiter5 = function(thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
-    });
-  }
-  return new (P || (P = Promise))(function(resolve2, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function exec(commandLine, args, options) {
-  return __awaiter5(this, void 0, void 0, function* () {
-    const commandArgs = argStringToArray(commandLine);
-    if (commandArgs.length === 0) {
-      throw new Error(`Parameter 'commandLine' cannot be null or empty.`);
-    }
-    const toolPath = commandArgs[0];
-    args = commandArgs.slice(1).concat(args || []);
-    const runner = new ToolRunner(toolPath, args, options);
-    return runner.exec();
-  });
-}
-function getExecOutput(commandLine, args, options) {
-  return __awaiter5(this, void 0, void 0, function* () {
-    var _a, _b;
-    let stdout = "";
-    let stderr = "";
-    const stdoutDecoder = new import_string_decoder.StringDecoder("utf8");
-    const stderrDecoder = new import_string_decoder.StringDecoder("utf8");
-    const originalStdoutListener = (_a = options === null || options === void 0 ? void 0 : options.listeners) === null || _a === void 0 ? void 0 : _a.stdout;
-    const originalStdErrListener = (_b = options === null || options === void 0 ? void 0 : options.listeners) === null || _b === void 0 ? void 0 : _b.stderr;
-    const stdErrListener = (data) => {
-      stderr += stderrDecoder.write(data);
-      if (originalStdErrListener) {
-        originalStdErrListener(data);
-      }
-    };
-    const stdOutListener = (data) => {
-      stdout += stdoutDecoder.write(data);
-      if (originalStdoutListener) {
-        originalStdoutListener(data);
-      }
-    };
-    const listeners = Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.listeners), { stdout: stdOutListener, stderr: stdErrListener });
-    const exitCode = yield exec(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
-    stdout += stdoutDecoder.end();
-    stderr += stderrDecoder.end();
-    return {
-      exitCode,
-      stdout,
-      stderr
-    };
-  });
-}
 
 // node_modules/@actions/core/lib/platform.js
 var platform = import_os2.default.platform();
 var arch = import_os2.default.arch();
 
 // node_modules/@actions/core/lib/core.js
+var __awaiter2 = function(thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function(resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function(resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
 var ExitCode;
 (function(ExitCode2) {
   ExitCode2[ExitCode2["Success"] = 0] = "Success";
@@ -21823,7 +21112,7 @@ function setOutput(name, value) {
   if (filePath) {
     return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
   }
-  process.stdout.write(os5.EOL);
+  process.stdout.write(os4.EOL);
   issueCommand("set-output", { name }, toCommandValue(value));
 }
 function setFailed(message) {
@@ -21833,8 +21122,45 @@ function setFailed(message) {
 function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
+function notice(message, properties = {}) {
+  issueCommand("notice", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function info(message) {
+  process.stdout.write(message + os4.EOL);
+}
+function startGroup(name) {
+  issue("group", name);
+}
+function endGroup() {
+  issue("endgroup");
+}
+function group(name, fn) {
+  return __awaiter2(this, void 0, void 0, function* () {
+    startGroup(name);
+    let result;
+    try {
+      result = yield fn();
+    } finally {
+      endGroup();
+    }
+    return result;
+  });
+}
 
-// src/steps/getBumpType.ts
+// src/utils/setOutputVerbose.ts
+var setOutputVerbose = (name, value) => {
+  setOutput(name, value);
+  info(`Output '${name}' set to '${JSON.stringify(value)}'`);
+};
+var setOutputVerbose_default = setOutputVerbose;
+
+// src/utils/execFileAsync.ts
+var import_child_process = require("child_process");
+var import_util = require("util");
+var execFileAsync = (0, import_util.promisify)(import_child_process.execFile);
+var execFileAsync_default = execFileAsync;
+
+// src/steps/1_getBumpType.ts
 var getBumpType = async (inputBumpType) => {
   switch (inputBumpType) {
     case "major":
@@ -21848,11 +21174,18 @@ var getBumpType = async (inputBumpType) => {
       process.exit(0);
   }
   const commitMessage = await getCommitMessage();
-  return bumpTypeFromMessage(commitMessage);
+  info(`Message for current commit: ${commitMessage}`);
+  const bumpType = bumpTypeFromMessage(commitMessage);
+  info(`Bump type: ${bumpType.toString()}`);
+  return bumpType;
 };
 var getCommitMessage = async () => {
-  const output = await getExecOutput("git", ["show", "-s", "--format='%s"]);
-  return output.stdout;
+  const { stdout } = await execFileAsync_default(
+    "git",
+    ["show", "-s", "--format=%s"],
+    { encoding: "utf8" }
+  );
+  return stdout;
 };
 var bumpTypeFromMessage = (message) => {
   if (/^feat(\([^\)]+\)?!:.+$)/.test(message)) {
@@ -21864,46 +21197,72 @@ var bumpTypeFromMessage = (message) => {
 };
 var getBumpType_default = getBumpType;
 
-// src/steps/getPrevVersion.ts
-var import_semver = __toESM(require_semver2());
-var getPrevVersion = async (tagPrefix) => {
-  const tags = await listAllTags(tagPrefix);
-  const versions = parseVersionsFromTags(tagPrefix, tags);
-  if (versions.length == 0) {
-    return null;
+// src/steps/2_listTagsWithPrefix.ts
+var listTagsWithPrefix = async (tagPrefix) => {
+  const allTags = await listAllTags(tagPrefix);
+  if (allTags.length == 0) {
+    info(`No tags found matching prefix`);
+  } else {
+    info(`Tags matching prefix:`);
+    info(allTags.join("\n"));
   }
-  return pickHighestVersion(versions);
+  return allTags;
 };
 var listAllTags = async (tagPrefix) => {
-  const output = await getExecOutput("git", ["tag", "--list", `${tagPrefix}*`]);
-  const tags = output.stdout.trim().split("\n");
-  return tags;
+  let { stdout } = await execFileAsync_default(
+    "git",
+    ["tag", "--list", `${tagPrefix}*`],
+    { encoding: "utf8" }
+  );
+  stdout = stdout.trim();
+  if (stdout == "") {
+    return [];
+  }
+  return stdout.split("\n");
 };
+var listTagsWithPrefix_default = listTagsWithPrefix;
+
+// src/steps/3_parseVersionsFromTags.ts
+var import_semver = __toESM(require_semver2());
 var parseVersionsFromTags = (tagPrefix, tags) => {
   const out = [];
   for (let tag of tags) {
-    const stripped = tag.substring(0, tagPrefix.length);
+    const stripped = tag.substring(tagPrefix.length);
     const parsed = (0, import_semver.parse)(stripped, false, false);
     if (!!parsed) {
       out.push(parsed);
     }
   }
+  if (out.length == 0) {
+    info(`No valid semver tags found`);
+  } else {
+    info(`Parsed versions from tags:`);
+    info(out.map((v) => v.toString()).join("\n"));
+  }
   return out;
 };
-var pickHighestVersion = (versions) => {
+var parseVersionsFromTags_default = parseVersionsFromTags;
+
+// src/steps/4_pickPrevVersion.ts
+var import_semver2 = __toESM(require_semver2());
+var pickPrevVersion = (versions) => {
+  if (versions.length == 0) {
+    return null;
+  }
   let highest = versions[0];
   for (let version of versions) {
-    if ((0, import_semver.gt)(version, highest)) {
+    if ((0, import_semver2.gt)(version, highest)) {
       highest = version;
     }
   }
+  info(`Previous version: ${highest.toString()}`);
   return highest;
 };
-var getPrevVersion_default = getPrevVersion;
+var pickPrevVersion_default = pickPrevVersion;
 
-// src/steps/getNextVersion.ts
-var import_semver2 = __toESM(require_semver2());
-var getNextVersion = (tagPrefix, bumpType, previousVersion) => {
+// src/steps/5_pickNextVersion.ts
+var import_semver3 = __toESM(require_semver2());
+var pickNextVersion = (tagPrefix, bumpType, previousVersion) => {
   const { major, minor, patch } = bumpVersion(bumpType, previousVersion);
   return {
     majorTag: `${tagPrefix}${major}`,
@@ -21913,33 +21272,76 @@ var getNextVersion = (tagPrefix, bumpType, previousVersion) => {
 };
 var bumpVersion = (bumpType, previousVersion) => {
   if (previousVersion == null) {
-    return new import_semver2.SemVer("0.0.0");
+    return new import_semver3.SemVer("0.0.0");
   }
   const { major, minor, patch } = previousVersion;
   switch (bumpType) {
     case "major":
-      return new import_semver2.SemVer(`${major + 1}.${0}.${0}`);
+      return new import_semver3.SemVer(`${major + 1}.${0}.${0}`);
     case "minor":
-      return new import_semver2.SemVer(`${major}.${minor + 1}.${0}`);
+      return new import_semver3.SemVer(`${major}.${minor + 1}.${0}`);
     default:
-      return new import_semver2.SemVer(`${major}.${minor}.${patch + 1}`);
+      return new import_semver3.SemVer(`${major}.${minor}.${patch + 1}`);
   }
 };
-var getNextVersion_default = getNextVersion;
+var pickNextVersion_default = pickNextVersion;
+
+// src/steps/index.ts
+var steps_default = {
+  getBumpType: getBumpType_default,
+  listTagsWithPrefix: listTagsWithPrefix_default,
+  parseVersionsFromTags: parseVersionsFromTags_default,
+  pickPrevVersion: pickPrevVersion_default,
+  pickNextVersion: pickNextVersion_default
+};
 
 // src/main.ts
 var run = async () => {
   const inputBumpType = getInput("bump-type");
   const inputTagPrefix = getInput("tag-prefix");
-  const bumpType = await getBumpType_default(inputBumpType);
-  const previousVersion = await getPrevVersion_default(inputTagPrefix);
-  const outputTags = getNextVersion_default(inputTagPrefix, bumpType, previousVersion);
-  if (previousVersion != null) {
-    setOutput("prev-tag", `${inputTagPrefix}${previousVersion.toString()}`);
-  }
-  setOutput("next-patch-tag", outputTags.patchTag);
-  setOutput("next-minor-tag", outputTags.minorTag);
-  setOutput("next-major-tag", outputTags.majorTag);
+  const bumpType = await group(
+    "Determining bump type",
+    async () => {
+      return steps_default.getBumpType(inputBumpType);
+    }
+  );
+  const relevantTags = await group(
+    `Listing tags with prefix '${inputTagPrefix}'`,
+    async () => {
+      return steps_default.listTagsWithPrefix(inputTagPrefix);
+    }
+  );
+  const existingVersions = await group(
+    "Parsing versions from tags",
+    async () => {
+      return steps_default.parseVersionsFromTags(inputTagPrefix, relevantTags);
+    }
+  );
+  const previousVersion = await group(
+    "Determining previous version",
+    async () => {
+      return steps_default.pickPrevVersion(existingVersions);
+    }
+  );
+  const outputTags = await group(
+    "Determining next version",
+    async () => {
+      return steps_default.pickNextVersion(inputTagPrefix, bumpType, previousVersion);
+    }
+  );
+  await group(
+    "Setting outputs",
+    async () => {
+      setOutputVerbose_default("next-patch-tag", outputTags.patchTag);
+      setOutputVerbose_default("next-minor-tag", outputTags.minorTag);
+      setOutputVerbose_default("next-major-tag", outputTags.majorTag);
+      if (previousVersion == null) {
+        notice("No previous version found, skipping prev-tag output");
+      } else {
+        setOutputVerbose_default("prev-tag", `${inputTagPrefix}${previousVersion.toString()}`);
+      }
+    }
+  );
 };
 run();
 /*! Bundled license information:

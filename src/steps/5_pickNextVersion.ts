@@ -1,13 +1,9 @@
 import { SemVer } from 'semver';
-import type { BumpType} from './getBumpType';
+import type { BumpType } from '../utils/bumpType';
+import { NextTags } from '../utils/nextTags';
 
-type NextTags = {
-    majorTag: string
-    minorTag: string
-    patchTag: string
-}
 
-const getNextVersion = (
+const pickNextVersion = (
     tagPrefix: string,
     bumpType: BumpType,
     previousVersion: SemVer | null,
@@ -41,4 +37,4 @@ const bumpVersion = (
     }
 }
 
-export default getNextVersion;
+export default pickNextVersion;
