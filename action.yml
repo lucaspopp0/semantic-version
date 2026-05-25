@@ -1,0 +1,24 @@
+name: Bump semantic version
+description: Bump semantic version
+
+inputs:
+  tag-prefix:
+    description: Prefix for tag lookup and the output tag
+    required: true
+  bump-type:
+    description: Optionally pick which element to bump (major, minor, or patch)
+    required: false
+
+outputs:
+  prev-tag:
+    description: The previous version tag
+  next-patch-tag:
+    description: The patch tag for this version
+  next-minor-tag:
+    description: The floating minor tag for this version
+  next-major-tag:
+    description: The floating major tag for this version
+
+runs:
+  using: node24
+  main: dist/index.js
