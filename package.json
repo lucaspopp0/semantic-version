@@ -15,16 +15,21 @@
     "pack": "esbuild src/main.ts --bundle --platform=node --format=cjs --target=node24 --outfile=dist/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "check": "npm run build && npm run lint"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "check": "npm run build && npm run lint && npm run test"
   },
   "devDependencies": {
     "@actions/core": "^3.0.1",
     "@eslint/js": "^9.39.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.9.1",
     "@types/semver": "^7.7.1",
     "esbuild": "^0.25.0",
     "eslint": "^9.39.1",
+    "jest": "^30.4.2",
     "semver": "^7.8.1",
+    "ts-jest": "^29.4.11",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.46.4"
   }
