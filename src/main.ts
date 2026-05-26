@@ -23,24 +23,34 @@ const run = async () => {
         }
     )
 
-    const existingVersions = await group(
+    const existingVersions: SemVer[] = await group(
         'Parsing versions from tags',
         async (): Promise<SemVer[]> => {
-            return steps.parseVersionsFromTags(inputTagPrefix, relevantTags)
-        }
+            return await Promise.resolve(
+                steps.parseVersionsFromTags(inputTagPrefix, relevantTags),
+            );
+        },
     )
 
-    const previousVersion = await group(
+    const previousVersion: SemVer | null = await group(
         'Determining previous version',
         async (): Promise<SemVer | null> => {
-            return steps.pickPrevVersion(existingVersions);
+            return await Promise.resolve(
+                steps.pickPrevVersion(existingVersions),
+            );
         },
     );
 
-    const outputTags = await group(
+    const outputTags: NextTags = await group(
         'Determining next version',
         async (): Promise<NextTags> => {
-            return steps.pickNextVersion(inputTagPrefix, bumpType, previousVersion)
+            return await Promise.resolve(
+                steps.pickNextVersion(
+                    inputTagPrefix,
+                    bumpType,
+                    previousVersion,
+                ),
+            );
         },
     );
 
@@ -50,14 +60,19 @@ const run = async () => {
             setOutputVerbose('next-patch-tag', outputTags.patchTag);
             setOutputVerbose('next-minor-tag', outputTags.minorTag);
             setOutputVerbose('next-major-tag', outputTags.majorTag);
-            
-            if (previousVersion == null) {
+
+            if (previousVersion === null) {
                 notice('No previous version found, skipping prev-tag output')
             } else {
-                setOutputVerbose('prev-tag', `${inputTagPrefix}${previousVersion.toString()}`)
+                setOutputVerbose(
+                    'prev-tag',
+                    `${inputTagPrefix}${previousVersion.version}`,
+                )
             }
+
+            await Promise.resolve();
         },
     )
 }
 
-run()
+void run();

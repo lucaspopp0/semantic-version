@@ -12,14 +12,20 @@
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc --noEmit",
-    "pack": "esbuild src/main.ts --bundle --platform=node --format=cjs --target=node24 --outfile=dist/index.js"
+    "pack": "esbuild src/main.ts --bundle --platform=node --format=cjs --target=node24 --outfile=dist/index.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check": "npm run build && npm run lint"
   },
   "devDependencies": {
     "@actions/core": "^3.0.1",
+    "@eslint/js": "^9.39.1",
     "@types/node": "^25.9.1",
     "@types/semver": "^7.7.1",
     "esbuild": "^0.25.0",
+    "eslint": "^9.39.1",
     "semver": "^7.8.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.46.4"
   }
 }

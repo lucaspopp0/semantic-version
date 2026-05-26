@@ -4,13 +4,13 @@ import { gt, SemVer } from 'semver';
 const pickPrevVersion = (
     versions: SemVer[],
 ): SemVer | null => {
-    if (versions.length == 0) {
+    if (versions.length === 0) {
         return null
     }
 
     let highest = versions[0];
 
-    for (let version of versions) {
+    for (const version of versions) {
         if (gt(version, highest)) {
             highest = version
         }

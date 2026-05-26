@@ -38,9 +38,9 @@ const getCommitMessage = async (): Promise<string> => {
 }
 
 const bumpTypeFromMessage = (message: string): BumpType => {
-    if (/^feat(\([^\)]+\)?!:.+$)/.test(message)) {
+    if (/^feat(\([^)]+\)?!:.+$)/.test(message)) {
         return 'major'
-    } else if (/^feat(\([^\)]+\)?:.+$)/.test(message)) {
+    } else if (/^feat(\([^)]+\)?:.+$)/.test(message)) {
         return 'minor'
     }
 

@@ -7,16 +7,16 @@ const parseVersionsFromTags = (
 ): SemVer[] => {
     const out: SemVer[] = [];
 
-    for (let tag of tags) {
+    for (const tag of tags) {
         const stripped = tag.substring(tagPrefix.length);
         const parsed = parse(stripped, false, false);
 
-        if (!!parsed) {
+        if (parsed) {
             out.push(parsed);
         }
     }
 
-    if (out.length == 0) {
+    if (out.length === 0) {
         info(`No valid semver tags found`)
     } else {
         info(`Parsed versions from tags:`)

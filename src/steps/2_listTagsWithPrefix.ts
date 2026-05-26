@@ -6,7 +6,7 @@ const listTagsWithPrefix = async (
 ): Promise<string[]> => {
     const allTags = await listAllTags(tagPrefix);
 
-    if (allTags.length == 0) {
+    if (allTags.length === 0) {
         info(`No tags found matching prefix`)
     } else {
         info(`Tags matching prefix:`)
@@ -27,7 +27,7 @@ const listAllTags = async (
 
     stdout = stdout.trim();
 
-    if (stdout == '') {
+    if (stdout === '') {
         return [];
     }
 

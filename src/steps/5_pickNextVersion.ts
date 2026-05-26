@@ -21,7 +21,7 @@ const bumpVersion = (
     bumpType: BumpType,
     previousVersion: SemVer | null,
 ): SemVer => {
-    if (previousVersion == null) {
+    if (previousVersion === null) {
         return new SemVer('0.0.0')
     }
 
