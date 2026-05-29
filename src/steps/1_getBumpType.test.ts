@@ -1,6 +1,7 @@
 import { setFailed } from '@actions/core';
 import getBumpType from './1_getBumpType';
 import execFileAsync from '../utils/execFileAsync';
+import { BumpType } from '../utils/bumpType';
 
 jest.mock('../utils/execFileAsync');
 
@@ -28,50 +29,46 @@ describe('getBumpType', () => {
         },
     );
 
-    it('infers patch from a non-feat commit message', async () => {
-        mockCommitMessage('fix: handle null tags');
+    const testCases: Record<string, {
+        commitMessage: string,
+        expectBumpType: BumpType,
+    }> = {
+        'infers patch from a non-feat commit message': {
+            commitMessage: 'fix: handle null tags',
+            expectBumpType: 'patch',
+        },
+        'infers minor from a feat commit without breaking change': {
+            commitMessage: 'feat: add tag listing',
+            expectBumpType: 'minor',
+        },
+        'infers minor from a scoped feat commit': {
+            commitMessage: 'feat(api): expose versions',
+            expectBumpType: 'minor',
+        },
+        'infers major from a breaking feat commit': {
+            commitMessage: 'feat!: remove legacy tags',
+            expectBumpType: 'major',
+        },
+        'infers major from a scoped breaking feat commit': {
+            commitMessage: 'feat(api)!: drop v1 tags',
+            expectBumpType: 'major',
+        },
+    }
 
-        const result = await getBumpType('');
+    for (const [name, tc] of Object.entries(testCases)) {
+        it(name, async () => {
+            mockCommitMessage(tc.commitMessage);
 
-        expect(result).toBe('patch');
-        expect(mockExecFileAsync).toHaveBeenCalledWith(
-            'git',
-            ['show', '-s', '--format=%s'],
-            { encoding: 'utf8' },
-        );
-    });
+            const result = await getBumpType('');
 
-    it('infers minor from a feat commit without breaking change', async () => {
-        mockCommitMessage('feat: add tag listing');
-
-        const result = await getBumpType('');
-
-        expect(result).toBe('minor');
-    });
-
-    it('infers minor from a scoped feat commit', async () => {
-        mockCommitMessage('feat(api): expose versions');
-
-        const result = await getBumpType('');
-
-        expect(result).toBe('minor');
-    });
-
-    it('infers major from a breaking feat commit', async () => {
-        mockCommitMessage('feat!: remove legacy tags');
-
-        const result = await getBumpType('');
-
-        expect(result).toBe('major');
-    });
-
-    it('infers major from a scoped breaking feat commit', async () => {
-        mockCommitMessage('feat(api)!: drop v1 tags');
-
-        const result = await getBumpType('');
-
-        expect(result).toBe('major');
-    });
+            expect(result).toBe(tc.expectBumpType);
+            expect(mockExecFileAsync).toHaveBeenCalledWith(
+                'git',
+                ['show', '-s', '--format=%s'],
+                { encoding: 'utf8' },
+            );
+        })
+    }
 
     it('calls setFailed and exits on an unrecognized bump-type', async () => {
         const exitSpy = jest
