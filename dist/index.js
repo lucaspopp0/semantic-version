@@ -21188,9 +21188,9 @@ var getCommitMessage = async () => {
   return stdout;
 };
 var bumpTypeFromMessage = (message) => {
-  if (/^feat(\([^\)]+\)?!:.+$)/.test(message)) {
+  if (/^feat(\([^)]*\))?!:.+/.test(message)) {
     return "major";
-  } else if (/^feat(\([^\)]+\)?:.+$)/.test(message)) {
+  } else if (/^feat(\([^)]*\))?:.+/.test(message)) {
     return "minor";
   }
   return "patch";
@@ -21200,7 +21200,7 @@ var getBumpType_default = getBumpType;
 // src/steps/2_listTagsWithPrefix.ts
 var listTagsWithPrefix = async (tagPrefix) => {
   const allTags = await listAllTags(tagPrefix);
-  if (allTags.length == 0) {
+  if (allTags.length === 0) {
     info(`No tags found matching prefix`);
   } else {
     info(`Tags matching prefix:`);
@@ -21215,7 +21215,7 @@ var listAllTags = async (tagPrefix) => {
     { encoding: "utf8" }
   );
   stdout = stdout.trim();
-  if (stdout == "") {
+  if (stdout === "") {
     return [];
   }
   return stdout.split("\n");
@@ -21226,14 +21226,14 @@ var listTagsWithPrefix_default = listTagsWithPrefix;
 var import_semver = __toESM(require_semver2());
 var parseVersionsFromTags = (tagPrefix, tags) => {
   const out = [];
-  for (let tag of tags) {
+  for (const tag of tags) {
     const stripped = tag.substring(tagPrefix.length);
     const parsed = (0, import_semver.parse)(stripped, false, false);
-    if (!!parsed) {
+    if (parsed) {
       out.push(parsed);
     }
   }
-  if (out.length == 0) {
+  if (out.length === 0) {
     info(`No valid semver tags found`);
   } else {
     info(`Parsed versions from tags:`);
@@ -21246,11 +21246,11 @@ var parseVersionsFromTags_default = parseVersionsFromTags;
 // src/steps/4_pickPrevVersion.ts
 var import_semver2 = __toESM(require_semver2());
 var pickPrevVersion = (versions) => {
-  if (versions.length == 0) {
+  if (versions.length === 0) {
     return null;
   }
   let highest = versions[0];
-  for (let version of versions) {
+  for (const version of versions) {
     if ((0, import_semver2.gt)(version, highest)) {
       highest = version;
     }
@@ -21271,7 +21271,7 @@ var pickNextVersion = (tagPrefix, bumpType, previousVersion) => {
   };
 };
 var bumpVersion = (bumpType, previousVersion) => {
-  if (previousVersion == null) {
+  if (previousVersion === null) {
     return new import_semver3.SemVer("0.0.0");
   }
   const { major, minor, patch } = previousVersion;
@@ -21314,19 +21314,29 @@ var run = async () => {
   const existingVersions = await group(
     "Parsing versions from tags",
     async () => {
-      return steps_default.parseVersionsFromTags(inputTagPrefix, relevantTags);
+      return await Promise.resolve(
+        steps_default.parseVersionsFromTags(inputTagPrefix, relevantTags)
+      );
     }
   );
   const previousVersion = await group(
     "Determining previous version",
     async () => {
-      return steps_default.pickPrevVersion(existingVersions);
+      return await Promise.resolve(
+        steps_default.pickPrevVersion(existingVersions)
+      );
     }
   );
   const outputTags = await group(
     "Determining next version",
     async () => {
-      return steps_default.pickNextVersion(inputTagPrefix, bumpType, previousVersion);
+      return await Promise.resolve(
+        steps_default.pickNextVersion(
+          inputTagPrefix,
+          bumpType,
+          previousVersion
+        )
+      );
     }
   );
   await group(
@@ -21335,15 +21345,19 @@ var run = async () => {
       setOutputVerbose_default("next-patch-tag", outputTags.patchTag);
       setOutputVerbose_default("next-minor-tag", outputTags.minorTag);
       setOutputVerbose_default("next-major-tag", outputTags.majorTag);
-      if (previousVersion == null) {
+      if (previousVersion === null) {
         notice("No previous version found, skipping prev-tag output");
       } else {
-        setOutputVerbose_default("prev-tag", `${inputTagPrefix}${previousVersion.toString()}`);
+        setOutputVerbose_default(
+          "prev-tag",
+          `${inputTagPrefix}${previousVersion.version}`
+        );
       }
+      await Promise.resolve();
     }
   );
 };
-run();
+void run();
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:
